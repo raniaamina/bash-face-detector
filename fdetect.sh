@@ -3,20 +3,11 @@
 
 # Variabel Setup
 default_detected_folder="$PWD/detected-face"
-custom_output_folder=false
-output_folder=""
-num_parallel_processes=5 # Default value
 
 # Fungsi untuk memindahkan file ke folder detected face
 move_to_detected_folder() {
     image_path="$1"
-
-    # Memeriksa apakah argumen -o diberikan atau tidak
-    if [ -n "$output_folder" ]; then
-        detected_folder="$output_folder"
-    else
-        detected_folder="$default_detected_folder"
-    fi
+    detected_folder="$default_detected_folder"
 
     # Buat folder jika belum ada
     mkdir -p "$detected_folder"
@@ -31,6 +22,13 @@ move_to_detected_folder() {
 # Fungsi untuk mendeteksi wajah dalam satu file foto
 detect_single_image() {
     image_path="$1"
+
+    # Memeriksa apakah file gambar ditemukan
+    if [ ! -f "$image_path" ]; then
+        echo "Error: File gambar tidak ditemukan: $image_path"
+        exit 1
+    fi
+
     faces=$(
         python3 - <<EOF
 import cv2
@@ -51,69 +49,23 @@ EOF
     fi
 }
 
-# Fungsi untuk mendeteksi wajah dalam semua file gambar di dalam folder (dengan paralel)
-detect_in_folder() {
-    folder_path="$1"
-
-    # Cek apakah folder ada
-    if [ ! -d "$folder_path" ]; then
-        echo "Folder not found: $folder_path"
-        exit 1
-    fi
-
-    # Mengekspor fungsi agar dapat diakses oleh xargs
-    export -f detect_single_image
-    export -f move_to_detected_folder
-
-    # Loop semua file gambar di dalam folder dengan xargs untuk paralelisasi
-    find "$folder_path" -type f \( -name '*.jpg' -o -name '*.png' -o -name '*.webp' \) -print0 | xargs -0 -n 1 -P "$num_parallel_processes" -I {} bash -c '
-        echo "Mendeteksi wajah dalam {}:"
-        detect_single_image "{}"
-        echo "------------------------"
-    '
-}
-
 # Parsing argumen
-while getopts ":d:o:j:" opt; do
+while getopts ":f:" opt; do
     case $opt in
-    d)
-        detect_in_folder "$OPTARG"
-        ;;
-    o)
-        output_folder="$OPTARG"
-        custom_output_folder=true
-        ;;
-    j)
-        num_parallel_processes="$OPTARG"
+    f)
+        detect_single_image "$OPTARG"
         ;;
     \?)
         echo "Usage:"
-        echo "  ./fdetect.sh -d <folder_path> -o <output_folder> -j <num_parallel_processes>  # Mendeteksi wajah dalam semua gambar di dalam folder"
-        echo "  ./fdetect.sh <image_path> -o <output_folder>                               # Mendeteksi wajah dalam satu file gambar"
+        echo "  ./fdetect.sh -f <image_path>"
         exit 1
         ;;
     esac
 done
 
-# Shift untuk menangani argumen setelah parsing
-shift $((OPTIND - 1))
-
 # Jika tidak ada argumen yang diberikan, tampilkan pesan usage
 if [ $# -eq 0 ]; then
     echo "Usage:"
-    echo "  ./fdetect.sh -d <folder_path> -o <output_folder> -j <num_parallel_processes>  # Mendeteksi wajah dalam semua gambar di dalam folder"
-    echo "  ./fdetect.sh <image_path> -o <output_folder>                               # Mendeteksi wajah dalam satu file gambar"
-    exit 1
-fi
-
-# Jika ada argumen file gambar, deteksi wajah
-if [ -f "$1" ]; then
-    detect_single_image "$1"
-    # Pindahkan ke custom output folder jika -o didefinisikan
-    if [ "$custom_output_folder" = true ]; then
-        move_to_detected_folder "$1"
-    fi
-else
-    echo "Invalid argument: $1 is not a file"
+    echo "  ./fdetect.sh -f <image_path>"
     exit 1
 fi
