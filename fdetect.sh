@@ -7,21 +7,27 @@ default_detected_folder="$PWD/detected-face"
 # Fungsi untuk memindahkan file ke folder detected face
 move_to_detected_folder() {
     image_path="$1"
-    detected_folder="$default_detected_folder"
+    move_target_dir="$2"
+
+    # Memeriksa apakah argumen -o diberikan atau tidak
+    if [ -z "$move_target_dir" ]; then
+        move_target_dir="$default_detected_folder"
+    fi
 
     # Buat folder jika belum ada
-    mkdir -p "$detected_folder"
+    mkdir -p "$move_target_dir"
 
     # Ambil nama file tanpa path
     file_name=$(basename "$image_path")
 
-    mv "$image_path" "$detected_folder/"
-    echo "Gambar dipindahkan ke $detected_folder/$file_name"
+    mv "$image_path" "$move_target_dir/"
+    echo "Gambar dipindahkan ke $move_target_dir/$file_name"
 }
 
 # Fungsi untuk mendeteksi wajah dalam satu file foto
 detect_single_image() {
     image_path="$1"
+    move_target_dir="$2"
 
     # Memeriksa apakah file gambar ditemukan
     if [ ! -f "$image_path" ]; then
@@ -43,29 +49,40 @@ EOF
     if [ "$faces" -gt 0 ]; then
         echo $faces
         echo "Wajah terdeteksi dalam $image_path"
-        move_to_detected_folder "$image_path"
+        move_to_detected_folder "$image_path" "$move_target_dir"
     else
         echo "Tidak ada wajah yang terdeteksi dalam $image_path"
     fi
 }
 
+# Menampilkan pesan help
+print_help() {
+    echo "Usage: $0 -f <image_path> -o <move_target_dir>"
+    echo "  -f    Path to the image file for face detection."
+    echo "  -o    (Optional) Target directory to move the detected image. If not provided, the default directory will be used."
+}
+
 # Parsing argumen
-while getopts ":f:" opt; do
+while getopts ":f:o:" opt; do
     case $opt in
     f)
-        detect_single_image "$OPTARG"
+        image_path="$OPTARG"
+        ;;
+    o)
+        move_target_dir="$OPTARG"
         ;;
     \?)
-        echo "Usage:"
-        echo "  ./fdetect.sh -f <image_path>"
+        print_help
         exit 1
         ;;
     esac
 done
 
 # Jika tidak ada argumen yang diberikan, tampilkan pesan usage
-if [ $# -eq 0 ]; then
-    echo "Usage:"
-    echo "  ./fdetect.sh -f <image_path>"
+if [ -z "$image_path" ]; then
+    print_help
     exit 1
 fi
+
+# Panggil fungsi detect_single_image dengan move_target_dir sebagai argumen opsional
+detect_single_image "$image_path" "$move_target_dir"
