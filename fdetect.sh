@@ -66,6 +66,8 @@ detect_in_folder() {
         exit 1
     fi
 
+    move_target_dir="$default_detected_folder"
+
     # Mengekspor fungsi agar dapat diakses oleh xargs
     export -f detect_single_image
     export -f move_to_detected_folder
@@ -80,14 +82,15 @@ detect_in_folder() {
 
 # Menampilkan pesan help
 print_help() {
-    echo "Usage: $0 -f <image_path> -o <move_target_dir> -d <folder_path>"
+    echo "Usage: $0 -f <image_path> -o <move_target_dir> -d <folder_path> -j <num_parallel_processes>"
     echo "  -f    Path to the image file for face detection."
     echo "  -o    (Optional) Target directory to move the detected image. If not provided, the default directory will be used."
     echo "  -d    (Optional) Directory containing images in jpg, png, and webp format to perform face detection on."
+    echo "  -j    (Optional) Number of parallel processes to use (default is 5)."
 }
 
 # Parsing argumen
-while getopts ":f:o:d:" opt; do
+while getopts ":f:o:d:j:" opt; do
     case $opt in
     f)
         image_path="$OPTARG"
@@ -98,12 +101,20 @@ while getopts ":f:o:d:" opt; do
     d)
         folder_path="$OPTARG"
         ;;
+    j)
+        num_parallel_processes="$OPTARG"
+        ;;
     \?)
         print_help
         exit 1
         ;;
     esac
 done
+
+# Set default num_parallel_processes if not provided
+if [ -z "$num_parallel_processes" ]; then
+    num_parallel_processes="$default_num_parallel_processes"
+fi
 
 # Jika tidak ada argumen yang diberikan, tampilkan pesan usage
 if [ -z "$image_path" ] && [ -z "$folder_path" ]; then
@@ -118,5 +129,5 @@ fi
 
 # Jika ada argumen folder, deteksi wajah dalam semua gambar di dalam folder
 if [ -n "$folder_path" ]; then
-    detect_in_folder "$folder_path" "$default_num_parallel_processes"
+    detect_in_folder "$folder_path" "$num_parallel_processes"
 fi
