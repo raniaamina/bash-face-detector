@@ -82,12 +82,21 @@ detect_in_folder() {
 
 # Menampilkan pesan help
 print_help() {
-    echo "[Simple Face Detector Script by Rania Amina]"
-    echo "Usage: $0 -f <image_path> -o <move_target_dir> -d <folder_path> -j <num_parallel_processes>"
+    echo "----------------------------------------------"
+    echo "= Simple Face Detector Script by Rania Amina ="
+    echo "----------------------------------------------"
+    echo    "Usage:"
+    echo "  Single Checking  : $(basename $0) -f <image_path>"
+    echo "  Bulk Checking    : $(basename $0) -d <folder_path>"
+    echo
     echo "  -f    Path to the image file for face detection."
+    echo
+    echo "  -d    Directory containing images in jpg, png, and webp format to perform face detection on."
+    echo
     echo "  -o    (Optional) Target directory to move the detected image. If not provided, the default directory will be used."
-    echo "  -d    (Optional) Directory containing images in jpg, png, and webp format to perform face detection on."
+    echo
     echo "  -j    (Optional) Number of parallel processes to use (default is 5)."
+    echo
 }
 
 # Parsing argumen
